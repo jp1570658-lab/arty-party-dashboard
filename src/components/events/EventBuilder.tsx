@@ -39,6 +39,7 @@ import { PartnersSection } from "@/components/builder/PartnersSection";
 import { GuestsSection } from "@/components/builder/GuestsSection";
 import { MarketingSection } from "@/components/builder/MarketingSection";
 import { BudgetSection } from "@/components/builder/BudgetSection";
+import { MediaSection } from "@/components/builder/MediaSection";
 import type { ActivityRef } from "@/components/builder/activity-types";
 import type { MeetingItem } from "@/components/meetings/MeetingCard";
 import { EVENT_STATUSES, EVENT_STATUS_LABELS, type EventStatus } from "@/lib/enums";
@@ -282,7 +283,17 @@ export function EventBuilder({
         <BudgetSection eventId={event.id} initial={event.budget?.items ?? []} />
       </CollapsibleSection>
       <CollapsibleSection title="Media Vault" icon={Images} summary={`${event.mediaFiles.length} files`}>
-        <SectionPlaceholder phase="Phase 11" />
+        <MediaSection
+          eventId={event.id}
+          initial={event.mediaFiles.map((m) => ({
+            id: m.id,
+            type: m.type,
+            url: m.url,
+            filename: m.filename,
+            caption: m.caption,
+            tags: Array.isArray(m.tags) ? (m.tags as string[]) : null,
+          }))}
+        />
       </CollapsibleSection>
       <CollapsibleSection title="Post-Event Analysis" icon={ClipboardCheck}>
         <SectionPlaceholder phase="Phase 12" />
