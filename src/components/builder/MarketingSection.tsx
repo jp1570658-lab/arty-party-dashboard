@@ -95,7 +95,9 @@ export function MarketingSection({
   async function generateBrief() {
     setGenerating(true);
     try {
-      const res = await fetch(`/api/ai/marketing-campaign`, { method: "POST" });
+      const res = await fetch(`/api/events/${eventId}/marketing/generate`, {
+        method: "POST",
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to generate");
       setPlan((p) => ({ ...p, campaignBrief: data.campaignBrief }));

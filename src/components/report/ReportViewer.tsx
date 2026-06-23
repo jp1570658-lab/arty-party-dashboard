@@ -23,7 +23,9 @@ export function ReportViewer({ eventId, data }: { eventId: string; data: ReportD
   async function generate() {
     setLoading(true);
     try {
-      const res = await fetch(`/api/ai/generate-report`, { method: "POST" });
+      const res = await fetch(`/api/events/${eventId}/report/narrative`, {
+        method: "POST",
+      });
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || "Failed");
       setNarrative(d.narrative);
