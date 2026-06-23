@@ -34,7 +34,9 @@ import { ArrowRight } from "lucide-react";
 import { ActivitiesSection } from "@/components/builder/ActivitiesSection";
 import { TeamSection } from "@/components/builder/TeamSection";
 import { LogisticsSection } from "@/components/builder/LogisticsSection";
+import { MeetingsSection } from "@/components/builder/MeetingsSection";
 import type { ActivityRef } from "@/components/builder/activity-types";
+import type { MeetingItem } from "@/components/meetings/MeetingCard";
 import { EVENT_STATUSES, EVENT_STATUS_LABELS, type EventStatus } from "@/lib/enums";
 import { computeProgress } from "@/lib/progress";
 import { formatDate, formatTime } from "@/lib/utils";
@@ -202,7 +204,21 @@ export function EventBuilder({
         </div>
       </CollapsibleSection>
       <CollapsibleSection title="Meetings" icon={CalendarClock} summary={`${event.meetings.length} meetings`}>
-        <SectionPlaceholder phase="Phase 7" />
+        <MeetingsSection
+          eventId={event.id}
+          eventName={event.name}
+          initial={event.meetings.map((m) => ({
+            id: m.id,
+            title: m.title,
+            date: new Date(m.date).toISOString(),
+            summary: m.summary,
+            pdfPath: m.pdfPath,
+            decisions: Array.isArray(m.decisions) ? (m.decisions as string[]) : null,
+            actionItems: Array.isArray(m.actionItems)
+              ? (m.actionItems as unknown as MeetingItem["actionItems"])
+              : null,
+          }))}
+        />
       </CollapsibleSection>
       <CollapsibleSection title="Partners" icon={Handshake} summary={`${event.partners.length} partners`}>
         <SectionPlaceholder phase="Phase 8" />
