@@ -35,6 +35,8 @@ import { ActivitiesSection } from "@/components/builder/ActivitiesSection";
 import { TeamSection } from "@/components/builder/TeamSection";
 import { LogisticsSection } from "@/components/builder/LogisticsSection";
 import { MeetingsSection } from "@/components/builder/MeetingsSection";
+import { PartnersSection } from "@/components/builder/PartnersSection";
+import { GuestsSection } from "@/components/builder/GuestsSection";
 import type { ActivityRef } from "@/components/builder/activity-types";
 import type { MeetingItem } from "@/components/meetings/MeetingCard";
 import { EVENT_STATUSES, EVENT_STATUS_LABELS, type EventStatus } from "@/lib/enums";
@@ -46,10 +48,14 @@ export function EventBuilder({
   event,
   allActivities,
   mediaArtists,
+  allPartners,
+  allGuests,
 }: {
   event: FullEvent;
   allActivities: ActivityRef[];
   mediaArtists: { id: string; name: string; category: string }[];
+  allPartners: { id: string; name: string; type: string }[];
+  allGuests: { id: string; name: string; email: string | null; role: string | null }[];
 }) {
   const router = useRouter();
   const setActiveEvent = useUIStore((s) => s.setActiveEvent);
@@ -221,10 +227,19 @@ export function EventBuilder({
         />
       </CollapsibleSection>
       <CollapsibleSection title="Partners" icon={Handshake} summary={`${event.partners.length} partners`}>
-        <SectionPlaceholder phase="Phase 8" />
+        <PartnersSection
+          eventId={event.id}
+          initial={event.partners}
+          allPartners={allPartners}
+        />
       </CollapsibleSection>
       <CollapsibleSection title="Guests" icon={UserCheck} summary={`${event.guestInvites.length} invites`}>
-        <SectionPlaceholder phase="Phase 8" />
+        <GuestsSection
+          eventId={event.id}
+          event={{ name: event.name, date: formatDate(event.date), location: event.location, theme: event.theme }}
+          initial={event.guestInvites}
+          allGuests={allGuests}
+        />
       </CollapsibleSection>
       <CollapsibleSection title="Marketing" icon={Megaphone}>
         <SectionPlaceholder phase="Phase 9" />

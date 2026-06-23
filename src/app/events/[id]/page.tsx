@@ -13,7 +13,7 @@ export default async function EventDetailPage({
 }) {
   await ensureDefaultActivities(prisma);
 
-  const [event, activities, mediaArtists] = await Promise.all([
+  const [event, activities, mediaArtists, allPartners, allGuests] = await Promise.all([
     prisma.event.findUnique({
       where: { id: params.id },
       include: eventInclude,
@@ -24,6 +24,14 @@ export default async function EventDetailPage({
       orderBy: { name: "asc" },
       select: { id: true, name: true, category: true },
     }),
+    prisma.partner.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, type: true },
+    }),
+    prisma.guest.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, email: true, role: true },
+    }),
   ]);
 
   if (!event) notFound();
@@ -33,6 +41,8 @@ export default async function EventDetailPage({
       event={event}
       allActivities={activities}
       mediaArtists={mediaArtists}
+      allPartners={allPartners}
+      allGuests={allGuests}
     />
   );
 }
