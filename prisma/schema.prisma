@@ -8,10 +8,10 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  // Unpooled connection for migrations / `prisma db push` (pooled PgBouncer
-  // connections can't run schema operations). Falls back to DATABASE_URL.
-  directUrl = env("DIRECT_URL")
+  // Vercel Postgres (Neon) canonical pair: pooled URL for serverless runtime,
+  // non-pooling URL for migrations / `prisma db push`.
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 model Event {
