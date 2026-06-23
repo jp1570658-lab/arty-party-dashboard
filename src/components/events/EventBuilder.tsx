@@ -29,12 +29,20 @@ import {
   CollapsibleSection,
   SectionPlaceholder,
 } from "@/components/builder/CollapsibleSection";
+import { ActivitiesSection } from "@/components/builder/ActivitiesSection";
+import type { ActivityRef } from "@/components/builder/activity-types";
 import { EVENT_STATUSES, EVENT_STATUS_LABELS, type EventStatus } from "@/lib/enums";
 import { computeProgress } from "@/lib/progress";
 import { formatDate, formatTime } from "@/lib/utils";
 import type { FullEvent } from "@/lib/event-include";
 
-export function EventBuilder({ event }: { event: FullEvent }) {
+export function EventBuilder({
+  event,
+  allActivities,
+}: {
+  event: FullEvent;
+  allActivities: ActivityRef[];
+}) {
   const router = useRouter();
   const setActiveEvent = useUIStore((s) => s.setActiveEvent);
   const [editing, setEditing] = useState(false);
@@ -148,7 +156,11 @@ export function EventBuilder({ event }: { event: FullEvent }) {
 
       {/* Feature sections */}
       <CollapsibleSection title="Activities & Materials" icon={Brush} defaultOpen summary={`${event.activities.length} activities`}>
-        <SectionPlaceholder phase="Phase 3" />
+        <ActivitiesSection
+          eventId={event.id}
+          allActivities={allActivities}
+          initial={event.activities}
+        />
       </CollapsibleSection>
       <CollapsibleSection title="Team" icon={Users} summary={`${event.teamMembers.length} people`}>
         <SectionPlaceholder phase="Phase 4" />
