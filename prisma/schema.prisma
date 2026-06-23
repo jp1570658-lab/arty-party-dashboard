@@ -1,0 +1,273 @@
+// Arty-Party Dashboard — Prisma schema
+// NOTE: SQLite (local dev) does not support Prisma `enum` types, so enum-like
+// fields are modelled as `String`. Allowed values are enforced in TypeScript
+// via src/lib/enums.ts. The schema remains PostgreSQL-portable.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id              String    @id @default(cuid())
+  name            String
+  date            DateTime
+  buildUpTime     DateTime?
+  breakdownTime   DateTime?
+  location        String
+  venueNotes      String?
+  theme           String?
+  themeNotes      String?
+  status          String    @default("CONCEPT") // EventStatus
+  capacity        Int?
+  actualAttendees Int?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  activities      EventActivity[]
+  teamMembers     EventTeamMember[]
+  materials       Material[]
+  logistics       LogisticsItem[]
+  meetings        Meeting[]
+  partners        EventPartner[]
+  mediaFiles      MediaFile[]
+  marketingPlan   MarketingPlan?
+  budget          Budget?
+  postAnalysis    PostAnalysis?
+  runOfShow       RunOfShowItem[]
+  guestInvites    GuestInvite[]
+}
+
+model Activity {
+  id               String  @id @default(cuid())
+  name             String  @unique
+  icon             String
+  color            String
+  defaultMaterials Json
+  defaultTeam      String?
+  events           EventActivity[]
+}
+
+model EventActivity {
+  id         String   @id @default(cuid())
+  eventId    String
+  activityId String
+  notes      String?
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  activity   Activity @relation(fields: [activityId], references: [id])
+  materials  Material[]
+}
+
+model Material {
+  id              String         @id @default(cuid())
+  name            String
+  quantity        Int            @default(1)
+  checked         Boolean        @default(false)
+  source          String?
+  eventId         String?
+  eventActivityId String?
+  event           Event?         @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventActivity   EventActivity? @relation(fields: [eventActivityId], references: [id], onDelete: Cascade)
+}
+
+model LogisticsItem {
+  id       String   @id @default(cuid())
+  eventId  String
+  time     DateTime
+  task     String
+  location String?
+  owner    String?
+  done     Boolean  @default(false)
+  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model RunOfShowItem {
+  id       String   @id @default(cuid())
+  eventId  String
+  time     DateTime
+  duration Int?
+  item     String
+  location String?
+  owner    String?
+  notes    String?
+  order    Int
+  event    Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model Artist {
+  id             String   @id @default(cuid())
+  name           String
+  category       String // ArtistCategory
+  subcategory    String?
+  email          String?
+  phone          String?
+  instagram      String?
+  tiktok         String?
+  website        String?
+  notes          String?
+  availability   String?
+  createdAt      DateTime @default(now())
+  events         EventTeamMember[]
+  collaborations CollaborationNote[]
+}
+
+model TeamMember {
+  id     String  @id @default(cuid())
+  name   String
+  role   String
+  email  String?
+  phone  String?
+  events EventTeamMember[]
+}
+
+model EventTeamMember {
+  id           String      @id @default(cuid())
+  eventId      String
+  teamMemberId String?
+  artistId     String?
+  role         String
+  teamType     String // TeamType
+  status       String      @default("pending")
+  notes        String?
+  event        Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  teamMember   TeamMember? @relation(fields: [teamMemberId], references: [id])
+  artist       Artist?     @relation(fields: [artistId], references: [id])
+}
+
+model Meeting {
+  id          String   @id @default(cuid())
+  eventId     String
+  date        DateTime
+  title       String
+  pdfPath     String?
+  summary     String?
+  actionItems Json?
+  decisions   Json?
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model Partner {
+  id             String   @id @default(cuid())
+  name           String
+  type           String
+  contactName    String?
+  email          String?
+  phone          String?
+  collabNotes    String?
+  website        String?
+  createdAt      DateTime @default(now())
+  events         EventPartner[]
+  collaborations CollaborationNote[]
+}
+
+model EventPartner {
+  id        String  @id @default(cuid())
+  eventId   String
+  partnerId String
+  role      String?
+  notes     String?
+  event     Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  partner   Partner @relation(fields: [partnerId], references: [id])
+}
+
+model CollaborationNote {
+  id        String   @id @default(cuid())
+  artistId  String?
+  partnerId String?
+  type      String
+  notes     String
+  status    String   @default("potential")
+  createdAt DateTime @default(now())
+  artist    Artist?  @relation(fields: [artistId], references: [id])
+  partner   Partner? @relation(fields: [partnerId], references: [id])
+}
+
+model Guest {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  role      String?
+  notes     String?
+  createdAt DateTime @default(now())
+  invites   GuestInvite[]
+}
+
+model GuestInvite {
+  id      String    @id @default(cuid())
+  eventId String
+  guestId String
+  status  String    @default("pending")
+  sentAt  DateTime?
+  notes   String?
+  event   Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  guest   Guest     @relation(fields: [guestId], references: [id])
+}
+
+model MarketingPlan {
+  id                    String    @id @default(cuid())
+  eventId               String    @unique
+  posterDeadline        DateTime?
+  flyerPrintDeadline    DateTime?
+  flyerDistributionDate DateTime?
+  onlinePostStart       DateTime?
+  posterLocations       Json?
+  flyerLocations        Json?
+  instagramStoryPlan    String?
+  instagramFeedPlan     String?
+  tiktokPlan            String?
+  specialInvites        String?
+  campaignBrief         String?
+  event                 Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model Budget {
+  id      String       @id @default(cuid())
+  eventId String       @unique
+  total   Float        @default(0)
+  event   Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  items   BudgetItem[]
+}
+
+model BudgetItem {
+  id        String  @id @default(cuid())
+  budgetId  String
+  category  String
+  name      String
+  estimated Float   @default(0)
+  actual    Float?
+  paid      Boolean @default(false)
+  notes     String?
+  budget    Budget  @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+}
+
+model MediaFile {
+  id        String   @id @default(cuid())
+  eventId   String
+  type      String // MediaType
+  url       String
+  filename  String
+  caption   String?
+  tags      Json?
+  createdAt DateTime @default(now())
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model PostAnalysis {
+  id               String  @id @default(cuid())
+  eventId          String  @unique
+  overallRating    Int?
+  whatWentWell     String?
+  whatWentWrong    String?
+  improvements     String?
+  couldBeBetter    String?
+  totalAttendees   Int?
+  audienceFeedback String?
+  teamFeedback     String?
+  aiSummary        String?
+  event            Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
