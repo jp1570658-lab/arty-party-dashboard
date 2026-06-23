@@ -29,8 +29,11 @@ import {
   CollapsibleSection,
   SectionPlaceholder,
 } from "@/components/builder/CollapsibleSection";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { ActivitiesSection } from "@/components/builder/ActivitiesSection";
 import { TeamSection } from "@/components/builder/TeamSection";
+import { LogisticsSection } from "@/components/builder/LogisticsSection";
 import type { ActivityRef } from "@/components/builder/activity-types";
 import { EVENT_STATUSES, EVENT_STATUS_LABELS, type EventStatus } from "@/lib/enums";
 import { computeProgress } from "@/lib/progress";
@@ -173,10 +176,30 @@ export function EventBuilder({
         />
       </CollapsibleSection>
       <CollapsibleSection title="Logistics" icon={Truck} summary={`${event.logistics.length} tasks`}>
-        <SectionPlaceholder phase="Phase 5" />
+        <LogisticsSection
+          eventId={event.id}
+          eventDateOnly={new Date(event.date).toISOString().slice(0, 10)}
+          buildUpTime={event.buildUpTime ? new Date(event.buildUpTime).toISOString() : null}
+          initial={event.logistics.map((l) => ({
+            ...l,
+            time: new Date(l.time).toISOString(),
+          }))}
+        />
       </CollapsibleSection>
       <CollapsibleSection title="Run of Show" icon={ListOrdered} summary={`${event.runOfShow.length} items`}>
-        <SectionPlaceholder phase="Phase 5" />
+        <div className="space-y-3">
+          <p className="text-sm text-ink-secondary">
+            The full event-day timeline lives on its own page — printable and
+            exportable as a PDF for your crew.
+          </p>
+          <Link
+            href={`/events/${event.id}/run-of-show`}
+            className="btn-primary inline-flex w-fit"
+          >
+            Open Run of Show ({event.runOfShow.length})
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
       </CollapsibleSection>
       <CollapsibleSection title="Meetings" icon={CalendarClock} summary={`${event.meetings.length} meetings`}>
         <SectionPlaceholder phase="Phase 7" />
