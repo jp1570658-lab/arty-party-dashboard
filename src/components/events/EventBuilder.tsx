@@ -18,6 +18,7 @@ import {
   Calendar,
   Pencil,
   Trash2,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useUIStore } from "@/store/ui";
@@ -162,6 +163,10 @@ export function EventBuilder({
             <Pencil className="h-4 w-4" />
             Edit details
           </Button>
+          <Link href={`/events/${event.id}/report`} className="btn-secondary">
+            <FileText className="h-4 w-4" />
+            Report
+          </Link>
           <Button variant="ghost" onClick={remove} className="text-danger">
             <Trash2 className="h-4 w-4" />
             Delete
