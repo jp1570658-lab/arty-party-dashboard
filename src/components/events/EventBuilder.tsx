@@ -30,6 +30,7 @@ import {
   SectionPlaceholder,
 } from "@/components/builder/CollapsibleSection";
 import { ActivitiesSection } from "@/components/builder/ActivitiesSection";
+import { TeamSection } from "@/components/builder/TeamSection";
 import type { ActivityRef } from "@/components/builder/activity-types";
 import { EVENT_STATUSES, EVENT_STATUS_LABELS, type EventStatus } from "@/lib/enums";
 import { computeProgress } from "@/lib/progress";
@@ -39,9 +40,11 @@ import type { FullEvent } from "@/lib/event-include";
 export function EventBuilder({
   event,
   allActivities,
+  mediaArtists,
 }: {
   event: FullEvent;
   allActivities: ActivityRef[];
+  mediaArtists: { id: string; name: string; category: string }[];
 }) {
   const router = useRouter();
   const setActiveEvent = useUIStore((s) => s.setActiveEvent);
@@ -163,7 +166,11 @@ export function EventBuilder({
         />
       </CollapsibleSection>
       <CollapsibleSection title="Team" icon={Users} summary={`${event.teamMembers.length} people`}>
-        <SectionPlaceholder phase="Phase 4" />
+        <TeamSection
+          eventId={event.id}
+          initial={event.teamMembers}
+          mediaArtists={mediaArtists}
+        />
       </CollapsibleSection>
       <CollapsibleSection title="Logistics" icon={Truck} summary={`${event.logistics.length} tasks`}>
         <SectionPlaceholder phase="Phase 5" />
