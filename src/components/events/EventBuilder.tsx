@@ -37,6 +37,7 @@ import { LogisticsSection } from "@/components/builder/LogisticsSection";
 import { MeetingsSection } from "@/components/builder/MeetingsSection";
 import { PartnersSection } from "@/components/builder/PartnersSection";
 import { GuestsSection } from "@/components/builder/GuestsSection";
+import { MarketingSection } from "@/components/builder/MarketingSection";
 import type { ActivityRef } from "@/components/builder/activity-types";
 import type { MeetingItem } from "@/components/meetings/MeetingCard";
 import { EVENT_STATUSES, EVENT_STATUS_LABELS, type EventStatus } from "@/lib/enums";
@@ -242,7 +243,39 @@ export function EventBuilder({
         />
       </CollapsibleSection>
       <CollapsibleSection title="Marketing" icon={Megaphone}>
-        <SectionPlaceholder phase="Phase 9" />
+        <MarketingSection
+          eventId={event.id}
+          eventDate={new Date(event.date).toISOString()}
+          initial={
+            event.marketingPlan
+              ? {
+                  posterDeadline: event.marketingPlan.posterDeadline
+                    ? new Date(event.marketingPlan.posterDeadline).toISOString()
+                    : null,
+                  flyerPrintDeadline: event.marketingPlan.flyerPrintDeadline
+                    ? new Date(event.marketingPlan.flyerPrintDeadline).toISOString()
+                    : null,
+                  flyerDistributionDate: event.marketingPlan.flyerDistributionDate
+                    ? new Date(event.marketingPlan.flyerDistributionDate).toISOString()
+                    : null,
+                  onlinePostStart: event.marketingPlan.onlinePostStart
+                    ? new Date(event.marketingPlan.onlinePostStart).toISOString()
+                    : null,
+                  posterLocations: Array.isArray(event.marketingPlan.posterLocations)
+                    ? (event.marketingPlan.posterLocations as string[])
+                    : [],
+                  flyerLocations: Array.isArray(event.marketingPlan.flyerLocations)
+                    ? (event.marketingPlan.flyerLocations as string[])
+                    : [],
+                  instagramStoryPlan: event.marketingPlan.instagramStoryPlan,
+                  instagramFeedPlan: event.marketingPlan.instagramFeedPlan,
+                  tiktokPlan: event.marketingPlan.tiktokPlan,
+                  specialInvites: event.marketingPlan.specialInvites,
+                  campaignBrief: event.marketingPlan.campaignBrief,
+                }
+              : null
+          }
+        />
       </CollapsibleSection>
       <CollapsibleSection title="Budget" icon={Wallet} summary={`${event.budget?.items.length ?? 0} line items`}>
         <SectionPlaceholder phase="Phase 10" />
