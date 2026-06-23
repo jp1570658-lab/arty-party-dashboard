@@ -25,10 +25,7 @@ import { StatusBadge } from "./StatusBadge";
 import { EditEventForm } from "./EditEventForm";
 import { ProgressRing } from "@/components/ui/ProgressRing";
 import { Button, Select } from "@/components/ui/primitives";
-import {
-  CollapsibleSection,
-  SectionPlaceholder,
-} from "@/components/builder/CollapsibleSection";
+import { CollapsibleSection } from "@/components/builder/CollapsibleSection";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { ActivitiesSection } from "@/components/builder/ActivitiesSection";
@@ -40,6 +37,7 @@ import { GuestsSection } from "@/components/builder/GuestsSection";
 import { MarketingSection } from "@/components/builder/MarketingSection";
 import { BudgetSection } from "@/components/builder/BudgetSection";
 import { MediaSection } from "@/components/builder/MediaSection";
+import { PostAnalysisSection } from "@/components/builder/PostAnalysisSection";
 import type { ActivityRef } from "@/components/builder/activity-types";
 import type { MeetingItem } from "@/components/meetings/MeetingCard";
 import { EVENT_STATUSES, EVENT_STATUS_LABELS, type EventStatus } from "@/lib/enums";
@@ -296,7 +294,25 @@ export function EventBuilder({
         />
       </CollapsibleSection>
       <CollapsibleSection title="Post-Event Analysis" icon={ClipboardCheck}>
-        <SectionPlaceholder phase="Phase 12" />
+        <PostAnalysisSection
+          eventId={event.id}
+          status={status}
+          initial={
+            event.postAnalysis
+              ? {
+                  overallRating: event.postAnalysis.overallRating,
+                  totalAttendees: event.postAnalysis.totalAttendees,
+                  whatWentWell: event.postAnalysis.whatWentWell,
+                  whatWentWrong: event.postAnalysis.whatWentWrong,
+                  improvements: event.postAnalysis.improvements,
+                  couldBeBetter: event.postAnalysis.couldBeBetter,
+                  audienceFeedback: event.postAnalysis.audienceFeedback,
+                  teamFeedback: event.postAnalysis.teamFeedback,
+                  aiSummary: event.postAnalysis.aiSummary,
+                }
+              : null
+          }
+        />
       </CollapsibleSection>
 
       <EditEventForm event={event} open={editing} onClose={() => setEditing(false)} />
