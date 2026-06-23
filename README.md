@@ -1,5 +1,7 @@
 # Arty-Party — AI Event Planner Dashboard
 
+**Live:** https://arty-party-dashboard.vercel.app
+
 A single working tool for JP to plan the Arty-Party arts & culture series end to end —
 from first idea through build-up, event day, and post-event reporting.
 
