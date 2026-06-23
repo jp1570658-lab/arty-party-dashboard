@@ -1,15 +1,17 @@
-// Arty-Party Dashboard — Prisma schema
-// NOTE: SQLite (local dev) does not support Prisma `enum` types, so enum-like
-// fields are modelled as `String`. Allowed values are enforced in TypeScript
-// via src/lib/enums.ts. The schema remains PostgreSQL-portable.
+// Arty-Party Dashboard — Prisma schema (PostgreSQL).
+// Enum-like fields are modelled as `String` with allowed values enforced in
+// TypeScript via src/lib/enums.ts (kept from the SQLite dev origin; portable).
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Unpooled connection for migrations / `prisma db push` (pooled PgBouncer
+  // connections can't run schema operations). Falls back to DATABASE_URL.
+  directUrl = env("DIRECT_URL")
 }
 
 model Event {

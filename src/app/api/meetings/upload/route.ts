@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/db";
+import { saveUpload } from "@/lib/storage";
 import {
   askClaudeWithPdf,
   extractJson,
@@ -42,12 +41,9 @@ export async function POST(req: NextRequest) {
 
     const bytes = Buffer.from(await file.arrayBuffer());
 
-    // Save to /public/uploads/meetings
-    const dir = path.join(process.cwd(), "public", "uploads", "meetings");
-    await mkdir(dir, { recursive: true });
-    const filename = `${randomUUID()}.pdf`;
-    await writeFile(path.join(dir, filename), bytes);
-    const pdfPath = `/uploads/meetings/${filename}`;
+    // Persist the PDF (Vercel Blob in prod, /public in dev)
+    const key = `uploads/meetings/${randomUUID()}.pdf`;
+    const pdfPath = await saveUpload(key, bytes, "application/pdf");
 
     // Create or update the meeting record
     if (!meetingId) {

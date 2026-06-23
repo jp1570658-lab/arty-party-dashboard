@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/db";
+import { saveUpload } from "@/lib/storage";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -25,9 +25,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "eventId and files required" }, { status: 400 });
     }
 
-    const dir = path.join(process.cwd(), "public", "uploads", "events", eventId);
-    await mkdir(dir, { recursive: true });
-
     const created = [];
     for (const file of files) {
       if (file.size > MAX_SIZE) {
@@ -37,15 +34,15 @@ export async function POST(req: NextRequest) {
         );
       }
       const ext = path.extname(file.name) || "";
-      const stored = `${randomUUID()}${ext}`;
+      const key = `uploads/events/${eventId}/${randomUUID()}${ext}`;
       const bytes = Buffer.from(await file.arrayBuffer());
-      await writeFile(path.join(dir, stored), bytes);
+      const url = await saveUpload(key, bytes, file.type || "application/octet-stream");
 
       const media = await prisma.mediaFile.create({
         data: {
           eventId,
           type: mediaType(file.type),
-          url: `/uploads/events/${eventId}/${stored}`,
+          url,
           filename: file.name,
         },
       });
