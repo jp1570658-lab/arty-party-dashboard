@@ -38,6 +38,7 @@ import { MeetingsSection } from "@/components/builder/MeetingsSection";
 import { PartnersSection } from "@/components/builder/PartnersSection";
 import { GuestsSection } from "@/components/builder/GuestsSection";
 import { MarketingSection } from "@/components/builder/MarketingSection";
+import { BudgetSection } from "@/components/builder/BudgetSection";
 import type { ActivityRef } from "@/components/builder/activity-types";
 import type { MeetingItem } from "@/components/meetings/MeetingCard";
 import { EVENT_STATUSES, EVENT_STATUS_LABELS, type EventStatus } from "@/lib/enums";
@@ -278,7 +279,7 @@ export function EventBuilder({
         />
       </CollapsibleSection>
       <CollapsibleSection title="Budget" icon={Wallet} summary={`${event.budget?.items.length ?? 0} line items`}>
-        <SectionPlaceholder phase="Phase 10" />
+        <BudgetSection eventId={event.id} initial={event.budget?.items ?? []} />
       </CollapsibleSection>
       <CollapsibleSection title="Media Vault" icon={Images} summary={`${event.mediaFiles.length} files`}>
         <SectionPlaceholder phase="Phase 11" />
