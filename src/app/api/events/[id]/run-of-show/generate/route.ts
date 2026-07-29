@@ -32,6 +32,7 @@ export async function POST(
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
+    // Matches how logistics and the run-of-show editor anchor their dates.
     const eventDay = new Date(event.date).toISOString().slice(0, 10);
 
     const context = {
