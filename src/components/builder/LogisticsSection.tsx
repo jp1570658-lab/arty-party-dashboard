@@ -6,6 +6,7 @@ import { Plus, X, Check, MapPin, User, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button, Input } from "@/components/ui/primitives";
 import { cn, formatTime } from "@/lib/utils";
+import { zonedToIso, zonedToUtc } from "@/lib/timezone";
 
 interface LogiItem {
   id: string;
@@ -35,7 +36,7 @@ export function LogisticsSection({
   const [form, setForm] = useState({ time: "", task: "", location: "", owner: "" });
 
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
-  const iso = (t: string) => new Date(`${eventDateOnly}T${t || "00:00"}`).toISOString();
+  const iso = (t: string) => zonedToIso(eventDateOnly, t);
   const resort = (arr: LogiItem[]) =>
     [...arr].sort((a, b) => +new Date(a.time) - +new Date(b.time));
 
@@ -97,7 +98,7 @@ export function LogisticsSection({
   }
 
   async function generateStarter() {
-    const base = buildUpTime ? new Date(buildUpTime) : new Date(`${eventDateOnly}T16:00`);
+    const base = buildUpTime ? new Date(buildUpTime) : zonedToUtc(eventDateOnly, "16:00");
     const plus = (mins: number) => new Date(base.getTime() + mins * 60000).toISOString();
     const starters = [
       { time: plus(0), task: "Crew arrives at venue", owner: "Build team" },

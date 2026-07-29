@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { zonedDateKey } from "./timezone";
 
 /** Context from past completed events — the "learning" the AI draws on. */
 export async function buildEventMemory(excludeEventId?: string) {
@@ -18,7 +19,7 @@ export async function buildEventMemory(excludeEventId?: string) {
 
   return pastEvents.map((e) => ({
     name: e.name,
-    date: e.date.toISOString().slice(0, 10),
+    date: zonedDateKey(e.date),
     location: e.location,
     theme: e.theme,
     activities: e.activities.map((a) => a.activity.name),
@@ -64,7 +65,7 @@ export async function buildCurrentEventContext(eventId: string) {
 
   return {
     name: e.name,
-    date: e.date.toISOString().slice(0, 10),
+    date: zonedDateKey(e.date),
     location: e.location,
     theme: e.theme,
     status: e.status,

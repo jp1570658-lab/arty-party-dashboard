@@ -7,6 +7,7 @@ import { CampaignCalendar } from "@/components/marketing/CampaignCalendar";
 import { ChipInput } from "@/components/ui/ChipInput";
 import { Button, Field, Input, Textarea } from "@/components/ui/primitives";
 import { suggestedDeadlines } from "@/lib/marketing";
+import { zonedDateKey } from "@/lib/timezone";
 
 interface PlanData {
   posterDeadline: string | null;
@@ -22,7 +23,7 @@ interface PlanData {
   campaignBrief: string | null;
 }
 
-const toDateInput = (v: string | null) => (v ? new Date(v).toISOString().slice(0, 10) : "");
+const toDateInput = (v: string | null) => (v ? zonedDateKey(v) : "");
 
 export function MarketingSection({
   eventId,

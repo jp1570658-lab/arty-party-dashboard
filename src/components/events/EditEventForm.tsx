@@ -6,10 +6,11 @@ import { toast } from "sonner";
 import { SlideOver } from "@/components/ui/SlideOver";
 import { Button, Field, Input, Textarea } from "@/components/ui/primitives";
 import type { FullEvent } from "@/lib/event-include";
+import { zonedDateKey } from "@/lib/timezone";
 
 function toDateInput(d: Date | string | null | undefined): string {
   if (!d) return "";
-  return new Date(d).toISOString().slice(0, 10);
+  return zonedDateKey(d);
 }
 function toTimeInput(d: Date | string | null | undefined): string {
   if (!d) return "";

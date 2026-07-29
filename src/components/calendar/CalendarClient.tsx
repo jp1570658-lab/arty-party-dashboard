@@ -21,6 +21,7 @@ import {
   type PlannerKind,
 } from "@/lib/enums";
 import { cn, formatDate } from "@/lib/utils";
+import { zonedDateKey, zonedToIso } from "@/lib/timezone";
 
 export interface CalendarEvent {
   id: string;
@@ -42,11 +43,12 @@ export interface PlannerTaskItem {
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-/** Local yyyy-mm-dd — avoids the UTC shift that toISOString() introduces. */
-function dayKey(d: Date | string): string {
-  const date = typeof d === "string" ? new Date(d) : d;
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
-    date.getDate()
+/** yyyy-mm-dd of a synthetic grid cell (constructed at local midnight, so its
+ *  own components are the cell's date). Stored instants use zonedDateKey
+ *  instead, so both sides of a lookup are Brussels days. */
+function cellKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate()
   ).padStart(2, "0")}`;
 }
 
@@ -73,7 +75,7 @@ export function CalendarClient({
   const today = new Date();
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [tasks, setTasks] = useState(initialTasks);
-  const [selected, setSelected] = useState<string>(dayKey(today));
+  const [selected, setSelected] = useState<string>(zonedDateKey(today));
   const [adding, setAdding] = useState(false);
 
   const grid = useMemo(
@@ -84,7 +86,7 @@ export function CalendarClient({
   const eventsByDay = useMemo(() => {
     const m = new Map<string, CalendarEvent[]>();
     for (const e of events) {
-      const k = dayKey(e.date);
+      const k = zonedDateKey(e.date);
       m.set(k, [...(m.get(k) ?? []), e]);
     }
     return m;
@@ -93,7 +95,7 @@ export function CalendarClient({
   const tasksByDay = useMemo(() => {
     const m = new Map<string, PlannerTaskItem[]>();
     for (const t of tasks) {
-      const k = dayKey(t.date);
+      const k = zonedDateKey(t.date);
       m.set(k, [...(m.get(k) ?? []), t]);
     }
     return m;
@@ -115,8 +117,8 @@ export function CalendarClient({
         body: JSON.stringify({
           ...payload,
           eventId: payload.eventId || null,
-          // Noon avoids any timezone rollover into the neighbouring day.
-          date: new Date(`${selected}T12:00:00`).toISOString(),
+          // Brussels noon — far from any day boundary or DST shift.
+          date: zonedToIso(selected, "12:00"),
         }),
       });
       const data = await res.json();
@@ -213,7 +215,7 @@ export function CalendarClient({
             onClick={() => {
               const now = new Date();
               setCursor(new Date(now.getFullYear(), now.getMonth(), 1));
-              setSelected(dayKey(now));
+              setSelected(zonedDateKey(now));
             }}
           >
             Today
@@ -236,9 +238,9 @@ export function CalendarClient({
           </div>
           <div className="grid grid-cols-7">
             {grid.map((d) => {
-              const k = dayKey(d);
+              const k = cellKey(d);
               const inMonth = d.getMonth() === cursor.getMonth();
-              const isToday = k === dayKey(today);
+              const isToday = k === zonedDateKey(today);
               const dayEvents = eventsByDay.get(k) ?? [];
               const dayTasks = tasksByDay.get(k) ?? [];
               return (
@@ -302,7 +304,7 @@ export function CalendarClient({
           <div>
             <span className="section-label mb-0">Selected day</span>
             <h2 className="text-lg font-semibold text-ink-primary">
-              {formatDate(`${selected}T12:00:00`)}
+              {formatDate(zonedToIso(selected, "12:00"))}
             </h2>
           </div>
 

@@ -1,12 +1,13 @@
 import { z } from "zod";
 import { EVENT_STATUSES } from "./enums";
 import { CALL_SHEET_PALETTE_KEYS } from "./call-sheet";
+import { zonedToIso } from "./timezone";
 
 // Combine a yyyy-mm-dd date with an optional hh:mm time into an ISO string.
+// Both are Brussels wall-clock values — see src/lib/timezone.ts.
 export function combineDateTime(date: string, time?: string): string {
   if (!date) return "";
-  const t = time && time.length ? time : "00:00";
-  return new Date(`${date}T${t}`).toISOString();
+  return zonedToIso(date, time);
 }
 
 export const eventCreateSchema = z.object({

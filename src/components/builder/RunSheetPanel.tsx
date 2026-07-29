@@ -6,6 +6,7 @@ import { Check, Clipboard, Download, ExternalLink, Link2, Plus, Trash2 } from "l
 import { toast } from "sonner";
 import { Button, Field, Input, Textarea } from "@/components/ui/primitives";
 import { runSheetPath, type KeyContact } from "@/lib/run-sheet";
+import { zonedTimeKey, zonedToIso } from "@/lib/timezone";
 
 export interface RunSheetData {
   shareToken: string;
@@ -25,9 +26,12 @@ export interface RunSheetData {
  */
 export function RunSheetPanel({
   eventId,
+  eventDateOnly,
   initial,
 }: {
   eventId: string;
+  /** yyyy-mm-dd in Brussels — anchors the doors time. */
+  eventDateOnly: string;
   initial: RunSheetData;
 }) {
   const [data, setData] = useState(initial);
@@ -120,14 +124,10 @@ export function RunSheetPanel({
         <Field label="Doors time" hint="Leave blank to use the event start time.">
           <Input
             type="time"
-            value={data.doorsTime ? toTimeInput(data.doorsTime) : ""}
+            value={data.doorsTime ? zonedTimeKey(data.doorsTime) : ""}
             onChange={(e) => {
               const v = e.target.value;
-              const iso = v
-                ? new Date(
-                    `${new Date(data.doorsTime ?? Date.now()).toISOString().slice(0, 10)}T${v}`
-                  ).toISOString()
-                : null;
+              const iso = v ? zonedToIso(eventDateOnly, v) : null;
               set("doorsTime", iso);
               save({ doorsTime: iso });
             }}
@@ -229,7 +229,3 @@ export function RunSheetPanel({
   );
 }
 
-function toTimeInput(iso: string): string {
-  const d = new Date(iso);
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}

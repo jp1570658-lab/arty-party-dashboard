@@ -1,10 +1,12 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { EVENT_TZ } from "./timezone";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+// Dates and times always read in Brussels time, never the viewer's own zone.
 export function formatDate(date: Date | string | null | undefined): string {
   if (!date) return "—";
   const d = typeof date === "string" ? new Date(date) : date;
@@ -12,13 +14,18 @@ export function formatDate(date: Date | string | null | undefined): string {
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: EVENT_TZ,
   });
 }
 
 export function formatTime(date: Date | string | null | undefined): string {
   if (!date) return "—";
   const d = typeof date === "string" ? new Date(date) : date;
-  return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: EVENT_TZ,
+  });
 }
 
 export function formatMoney(n: number | null | undefined): string {

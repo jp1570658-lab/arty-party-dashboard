@@ -6,12 +6,10 @@ import { Plus, X, Check, Printer, FileDown, Trash2, Clock, Sparkles } from "luci
 import { toast } from "sonner";
 import { Button, Input } from "@/components/ui/primitives";
 import { formatTime } from "@/lib/utils";
+import { zonedTimeKey, zonedToIso } from "@/lib/timezone";
 
-/** ISO → "HH:MM" for the inline time inputs. */
-function toTimeInput(iso: string): string {
-  const d = new Date(iso);
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
+/** ISO → "HH:MM" (Brussels) for the inline time inputs. */
+const toTimeInput = zonedTimeKey;
 
 /** Borderless input that looks like text until you focus it. Commits on blur so
  *  editing an AI-drafted row is a click-and-type, not a modal. */
@@ -98,7 +96,7 @@ export function RunOfShow({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          time: new Date(`${eventDateOnly}T${form.time}`).toISOString(),
+          time: zonedToIso(eventDateOnly, form.time),
           duration: form.duration ? Number(form.duration) : null,
           item: form.item,
           owner: form.owner,
@@ -235,9 +233,7 @@ export function RunOfShow({
                     defaultValue={toTimeInput(it.time)}
                     onBlur={(e) => {
                       if (!e.target.value) return;
-                      const iso = new Date(
-                        `${eventDateOnly}T${e.target.value}`
-                      ).toISOString();
+                      const iso = zonedToIso(eventDateOnly, e.target.value);
                       if (iso !== it.time) patch(it.id, { time: iso });
                     }}
                     className="w-[92px] rounded border-transparent bg-transparent px-1 py-0.5 text-sm font-semibold tabular-nums hover:bg-surface-2 focus:bg-surface-2 focus:outline-none focus:ring-1 focus:ring-purple-500 print:hidden"

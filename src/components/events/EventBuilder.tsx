@@ -47,6 +47,7 @@ import type { MeetingItem } from "@/components/meetings/MeetingCard";
 import { EVENT_STATUSES, EVENT_STATUS_LABELS, type EventStatus } from "@/lib/enums";
 import { computeProgress } from "@/lib/progress";
 import { formatDate, formatTime } from "@/lib/utils";
+import { zonedDateKey } from "@/lib/timezone";
 import type { FullEvent } from "@/lib/event-include";
 
 export function EventBuilder({
@@ -273,11 +274,15 @@ export function EventBuilder({
         summary={`${event.logistics.length} tasks · shareable with venue and vendors`}
       >
         <div className="mb-5">
-          <RunSheetPanel eventId={event.id} initial={runSheet} />
+          <RunSheetPanel
+            eventId={event.id}
+            eventDateOnly={zonedDateKey(event.date)}
+            initial={runSheet}
+          />
         </div>
         <LogisticsSection
           eventId={event.id}
-          eventDateOnly={new Date(event.date).toISOString().slice(0, 10)}
+          eventDateOnly={zonedDateKey(event.date)}
           buildUpTime={event.buildUpTime ? new Date(event.buildUpTime).toISOString() : null}
           initial={event.logistics.map((l) => ({
             ...l,

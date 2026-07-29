@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { RunOfShow } from "@/components/builder/RunOfShow";
 import { formatDate } from "@/lib/utils";
+import { zonedDateKey } from "@/lib/timezone";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export default async function RunOfShowPage({
   });
   if (!event) notFound();
 
-  const eventDateOnly = event.date.toISOString().slice(0, 10);
+  const eventDateOnly = zonedDateKey(event.date);
 
   return (
     <div className="space-y-5">
