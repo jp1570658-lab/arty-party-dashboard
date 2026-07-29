@@ -362,3 +362,23 @@ model PostAnalysis {
   aiSummary        String?
   event            Event   @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
+
+// A single AI-generated community insight — a trend, a news item, an open call,
+// an account worth following, or a suggested action. Grouped into daily batches.
+model Insight {
+  id        String   @id @default(cuid())
+  kind      String // InsightKind
+  title     String
+  body      String
+  // Why this matters to Arty-Party specifically.
+  relevance String?
+  url       String?
+  source    String?
+  // The day this batch was generated for (Brussels day, at noon).
+  batchDate DateTime
+  saved     Boolean  @default(false)
+  dismissed Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([batchDate])
+}

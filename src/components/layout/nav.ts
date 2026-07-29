@@ -5,6 +5,7 @@ import {
   Users,
   UserCheck,
   Handshake,
+  Radar,
   FileText,
   type LucideIcon,
 } from "lucide-react";
@@ -22,6 +23,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Artists", href: "/artists", icon: Users },
   { label: "Guests", href: "/guests", icon: UserCheck },
   { label: "Partners", href: "/partners", icon: Handshake },
+  { label: "Community", href: "/community", icon: Radar },
   { label: "Reports", href: "/reports", icon: FileText },
 ];
 

@@ -50,6 +50,61 @@ export async function askClaude(
 }
 
 /**
+ * Single-shot call with the server-side web search tool enabled, for anything
+ * that needs information past the model's training cutoff.
+ *
+ * Web search runs on Anthropic's side and is billed per search ($10/1000) on
+ * top of tokens, so `maxSearches` is a hard cost ceiling — keep it low.
+ * A long search turn can stop with `pause_turn`; resuming is just re-sending
+ * the conversation, which the loop below does.
+ */
+export async function askClaudeWithWebSearch(
+  system: string,
+  user: string,
+  { maxTokens = 4096, maxSearches = 5 } = {}
+): Promise<string> {
+  if (!isAIConfigured()) throw new AINotConfiguredError();
+
+  const messages: Anthropic.MessageParam[] = [{ role: "user", content: user }];
+  let message: Anthropic.Message | null = null;
+
+  // Bounded tightly: each resume re-runs the search budget, multiplying both
+  // cost and latency, and the whole call has to fit a serverless timeout.
+  for (let i = 0; i < 2; i++) {
+    message = await getClient().messages.create({
+      model: AI_MODEL,
+      max_tokens: maxTokens,
+      system,
+      messages,
+      tools: [
+        {
+          // Basic variant deliberately: the _20260209 version adds dynamic
+          // filtering, which runs code execution under the hood and roughly
+          // triples wall-clock time. This call has to finish inside a
+          // serverless timeout, and we post-filter the results ourselves.
+          type: "web_search_20250305",
+          name: "web_search",
+          max_uses: maxSearches,
+        } as unknown as Anthropic.ToolUnion,
+      ],
+    });
+
+    if (message.stop_reason !== "pause_turn") break;
+    // Re-send with the paused turn appended; the server picks up where it left off.
+    messages.push({ role: "assistant", content: message.content });
+  }
+
+  const text = (message?.content ?? [])
+    .filter((b): b is Anthropic.TextBlock => b.type === "text")
+    .map((b) => b.text)
+    .join("\n")
+    .trim();
+
+  if (!text) throw new Error("Claude returned no text from the search");
+  return text;
+}
+
+/**
  * Single-shot call with a PDF document attached (Claude reads the PDF natively).
  */
 export async function askClaudeWithPdf(

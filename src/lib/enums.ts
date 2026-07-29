@@ -124,6 +124,32 @@ export const INVITE_STATUS_LABELS: Record<string, string> = {
 
 export const PARTNER_TYPES = ["sponsor", "venue", "brand", "media partner"] as const;
 
+// Community & trends insights.
+export const INSIGHT_KINDS = [
+  "TREND",
+  "NEWS",
+  "OPEN_CALL",
+  "ACCOUNT",
+  "ACTION",
+] as const;
+export type InsightKind = (typeof INSIGHT_KINDS)[number];
+
+export const INSIGHT_KIND_LABELS: Record<InsightKind, string> = {
+  TREND: "Trend",
+  NEWS: "News",
+  OPEN_CALL: "Open call",
+  ACCOUNT: "Worth following",
+  ACTION: "Do this week",
+};
+
+export const INSIGHT_KIND_STYLES: Record<InsightKind, string> = {
+  TREND: "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
+  NEWS: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+  OPEN_CALL: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+  ACCOUNT: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+  ACTION: "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300",
+};
+
 // Calendar entries: operational planning tasks vs content/marketing beats.
 export const PLANNER_KINDS = ["TASK", "CONTENT"] as const;
 export type PlannerKind = (typeof PLANNER_KINDS)[number];
