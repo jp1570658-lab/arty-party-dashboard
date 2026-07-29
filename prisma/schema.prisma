@@ -27,6 +27,9 @@ model Event {
   status          String    @default("CONCEPT") // EventStatus
   capacity        Int?
   actualAttendees Int?
+  // Accent palette used to style the public artist call sheet — a key from
+  // CALL_SHEET_PALETTES in src/lib/call-sheet.ts. Null = brand default.
+  callSheetPalette String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -42,6 +45,48 @@ model Event {
   postAnalysis    PostAnalysis?
   runOfShow       RunOfShowItem[]
   guestInvites    GuestInvite[]
+  callSheets      CallSheetSubmission[]
+}
+
+// One entry per artist/DJ who fills in the event's shared call sheet link.
+// Submissions never overwrite each other across artists; a repeat submit from
+// the same artist updates their own entry and archives the old one as a
+// CallSheetRevision (artistNameKey is the normalised match key).
+model CallSheetSubmission {
+  id                 String   @id @default(cuid())
+  eventId            String
+  name               String
+  artistName         String
+  artistNameKey      String
+  email              String
+  socialHandles      String?
+  bio                String?
+  promoMediaUrl      String?
+  promoMediaFilename String?
+  promoMediaLink     String?
+  requirements       String?
+  arrivalTime        String?
+  soundCheckDuration String?
+  materialsUrl       String?
+  materialsFilename  String?
+  materialsLink      String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  event     Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  revisions CallSheetRevision[]
+
+  @@unique([eventId, artistNameKey])
+}
+
+// Snapshot of a submission as it looked before an artist resubmitted.
+model CallSheetRevision {
+  id           String   @id @default(cuid())
+  submissionId String
+  data         Json
+  createdAt    DateTime @default(now())
+
+  submission CallSheetSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
 }
 
 model Activity {

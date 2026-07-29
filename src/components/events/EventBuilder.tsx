@@ -14,6 +14,7 @@ import {
   Wallet,
   Images,
   ClipboardCheck,
+  ClipboardList,
   MapPin,
   Calendar,
   Pencil,
@@ -31,6 +32,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { ActivitiesSection } from "@/components/builder/ActivitiesSection";
 import { TeamSection } from "@/components/builder/TeamSection";
+import { CallSheetSection } from "@/components/builder/CallSheetSection";
 import { LogisticsSection } from "@/components/builder/LogisticsSection";
 import { MeetingsSection } from "@/components/builder/MeetingsSection";
 import { PartnersSection } from "@/components/builder/PartnersSection";
@@ -67,6 +69,9 @@ export function EventBuilder({
   useEffect(() => {
     setActiveEvent({ id: event.id, name: event.name });
   }, [event.id, event.name, setActiveEvent]);
+
+  // Denominator for "x of y artists submitted" — everyone booked as an artist.
+  const bookedArtists = event.teamMembers.filter((m) => m.teamType === "ARTIST").length;
 
   const progress = computeProgress({
     activities: event.activities.length > 0,
@@ -187,6 +192,41 @@ export function EventBuilder({
           eventId={event.id}
           initial={event.teamMembers}
           mediaArtists={mediaArtists}
+        />
+      </CollapsibleSection>
+      <CollapsibleSection
+        title="Artist Call Sheets"
+        icon={ClipboardList}
+        summary={
+          bookedArtists > 0
+            ? `${event.callSheets.length} of ${bookedArtists} artists submitted`
+            : `${event.callSheets.length} submitted`
+        }
+      >
+        <CallSheetSection
+          eventId={event.id}
+          bookedArtistCount={bookedArtists}
+          initialPalette={event.callSheetPalette}
+          initial={event.callSheets.map((c) => ({
+            id: c.id,
+            name: c.name,
+            artistName: c.artistName,
+            email: c.email,
+            socialHandles: c.socialHandles,
+            bio: c.bio,
+            promoMediaUrl: c.promoMediaUrl,
+            promoMediaFilename: c.promoMediaFilename,
+            promoMediaLink: c.promoMediaLink,
+            requirements: c.requirements,
+            arrivalTime: c.arrivalTime,
+            soundCheckDuration: c.soundCheckDuration,
+            materialsUrl: c.materialsUrl,
+            materialsFilename: c.materialsFilename,
+            materialsLink: c.materialsLink,
+            createdAt: new Date(c.createdAt).toISOString(),
+            updatedAt: new Date(c.updatedAt).toISOString(),
+            revisionCount: c._count.revisions,
+          }))}
         />
       </CollapsibleSection>
       <CollapsibleSection title="Logistics" icon={Truck} summary={`${event.logistics.length} tasks`}>

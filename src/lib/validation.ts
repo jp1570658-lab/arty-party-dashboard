@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { EVENT_STATUSES } from "./enums";
+import { CALL_SHEET_PALETTE_KEYS } from "./call-sheet";
 
 // Combine a yyyy-mm-dd date with an optional hh:mm time into an ISO string.
 export function combineDateTime(date: string, time?: string): string {
@@ -23,6 +24,10 @@ export const eventCreateSchema = z.object({
 export const eventUpdateSchema = eventCreateSchema.partial().extend({
   status: z.enum(EVENT_STATUSES).optional(),
   actualAttendees: z.coerce.number().int().nonnegative().optional().nullable(),
+  callSheetPalette: z
+    .enum(CALL_SHEET_PALETTE_KEYS as [string, ...string[]])
+    .optional()
+    .nullable(),
 });
 
 export type EventCreateInput = z.infer<typeof eventCreateSchema>;
@@ -46,3 +51,36 @@ export const wizardStep3Schema = z.object({
   theme: z.string().optional(),
   themeNotes: z.string().optional(),
 });
+
+/* ---------- Artist call sheet ---------- */
+
+const optionalText = z
+  .string()
+  .trim()
+  .optional()
+  .transform((v) => (v && v.length ? v : null));
+
+const optionalUrl = z
+  .string()
+  .trim()
+  .optional()
+  .transform((v) => (v && v.length ? v : null))
+  .refine(
+    (v) => v === null || /^https?:\/\/.+/i.test(v),
+    "Links must start with http:// or https://"
+  );
+
+export const callSheetSubmissionSchema = z.object({
+  name: z.string().trim().min(2, "Please enter your name"),
+  artistName: z.string().trim().min(1, "Artist name is required"),
+  email: z.string().trim().email("Enter a valid email address"),
+  socialHandles: optionalText,
+  bio: optionalText,
+  promoMediaLink: optionalUrl,
+  requirements: optionalText,
+  arrivalTime: optionalText,
+  soundCheckDuration: optionalText,
+  materialsLink: optionalUrl,
+});
+
+export type CallSheetSubmissionInput = z.infer<typeof callSheetSubmissionSchema>;

@@ -65,6 +65,7 @@ export async function PATCH(
         ...(d.themeNotes !== undefined && { themeNotes: d.themeNotes }),
         ...(d.status !== undefined && { status: d.status }),
         ...(d.actualAttendees !== undefined && { actualAttendees: d.actualAttendees }),
+        ...(d.callSheetPalette !== undefined && { callSheetPalette: d.callSheetPalette }),
       },
     });
     return NextResponse.json(event);

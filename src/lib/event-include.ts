@@ -12,6 +12,10 @@ export const eventInclude = {
   mediaFiles: { orderBy: { createdAt: "desc" } },
   partners: { include: { partner: true } },
   guestInvites: { include: { guest: true } },
+  callSheets: {
+    orderBy: { createdAt: "asc" },
+    include: { _count: { select: { revisions: true } } },
+  },
 } satisfies Prisma.EventInclude;
 
 export type FullEvent = Prisma.EventGetPayload<{ include: typeof eventInclude }>;
