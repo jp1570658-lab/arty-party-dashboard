@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Search, Plus, Trash2, Sparkles } from "lucide-react";
+import { Search, Plus, Trash2, Sparkles, Send, Users } from "lucide-react";
 import { toast } from "sonner";
 import { AIEmailModal, type EmailRequest } from "@/components/ai/AIEmailModal";
-import { Input } from "@/components/ui/primitives";
+import { Button, Input } from "@/components/ui/primitives";
 import { cn } from "@/lib/utils";
 import { INVITE_STATUSES, INVITE_STATUS_LABELS } from "@/lib/enums";
 
@@ -19,6 +19,8 @@ interface GuestLite {
 interface InviteItem {
   id: string;
   status: string;
+  partySize: number | null;
+  respondedAt: string | null;
   guest: GuestLite;
 }
 
@@ -44,6 +46,47 @@ export function GuestsSection({
   const [invites, setInvites] = useState<InviteItem[]>(initial);
   const [query, setQuery] = useState("");
   const [emailReq, setEmailReq] = useState<EmailRequest | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [sending, setSending] = useState(false);
+
+  // Head count from actual RSVPs — plus-ones included.
+  const confirmed = invites.filter((i) => i.status === "confirmed");
+  const headCount = confirmed.reduce((sum, i) => sum + (i.partySize ?? 1), 0);
+  const awaiting = invites.filter((i) => i.status === "sent").length;
+
+  async function sendInvites() {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    setSending(true);
+    try {
+      const res = await fetch(`/api/events/${eventId}/guests/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inviteIds: ids }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to send");
+
+      const failed = (data.results ?? []).filter((r: { ok: boolean }) => !r.ok);
+      if (data.sent > 0) {
+        toast.success(`Invitation sent to ${data.sent} guest${data.sent === 1 ? "" : "s"}`);
+        setInvites((p) =>
+          p.map((i) =>
+            ids.includes(i.id) && !failed.some((f: { id: string }) => f.id === i.id)
+              ? { ...i, status: "sent" }
+              : i
+          )
+        );
+      }
+      for (const f of failed) toast.error(`${f.name}: ${f.error}`);
+      setSelected(new Set());
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send");
+    } finally {
+      setSending(false);
+    }
+  }
 
   const invitedIds = new Set(invites.map((i) => i.guest.id));
   const matches = allGuests.filter(
@@ -98,6 +141,26 @@ export function GuestsSection({
 
   return (
     <div className="space-y-4">
+      {/* RSVP summary */}
+      {invites.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-surface-2 px-4 py-3">
+          <div className="flex items-center gap-2 text-sm">
+            <Users className="h-4 w-4 text-brand-purple" />
+            <span className="font-semibold text-ink-primary">{headCount}</span>
+            <span className="text-ink-secondary">
+              coming from {confirmed.length} confirmed
+              {awaiting > 0 && ` · ${awaiting} awaiting reply`}
+            </span>
+          </div>
+          {selected.size > 0 && (
+            <Button onClick={sendInvites} loading={sending}>
+              <Send className="h-4 w-4" />
+              Send invitation ({selected.size})
+            </Button>
+          )}
+        </div>
+      )}
+
       {/* Invited list */}
       <div className="space-y-2">
         {invites.length === 0 && (
@@ -108,10 +171,38 @@ export function GuestsSection({
           </p>
         )}
         {invites.map((inv) => (
-          <div key={inv.id} className="flex items-center justify-between rounded-lg border bg-surface-0 px-3 py-2">
-            <div>
-              <span className="font-medium text-ink-primary">{inv.guest.name}</span>
-              {inv.guest.role && <span className="ml-2 text-xs text-ink-muted">{inv.guest.role}</span>}
+          <div key={inv.id} className="flex items-center justify-between gap-2 rounded-lg border bg-surface-0 px-3 py-2">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <input
+                type="checkbox"
+                checked={selected.has(inv.id)}
+                disabled={!inv.guest.email}
+                title={
+                  inv.guest.email
+                    ? "Select to email an invitation"
+                    : "No email on file for this guest"
+                }
+                onChange={(e) =>
+                  setSelected((s) => {
+                    const n = new Set(s);
+                    if (e.target.checked) n.add(inv.id);
+                    else n.delete(inv.id);
+                    return n;
+                  })
+                }
+                className="h-4 w-4 shrink-0 accent-[var(--brand-purple)] disabled:opacity-30"
+              />
+              <div className="min-w-0">
+                <span className="font-medium text-ink-primary">{inv.guest.name}</span>
+                {inv.guest.role && (
+                  <span className="ml-2 text-xs text-ink-muted">{inv.guest.role}</span>
+                )}
+                {inv.status === "confirmed" && (inv.partySize ?? 1) > 1 && (
+                  <span className="ml-2 text-xs text-ink-secondary">
+                    +{(inv.partySize ?? 1) - 1}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-1.5">
               <button

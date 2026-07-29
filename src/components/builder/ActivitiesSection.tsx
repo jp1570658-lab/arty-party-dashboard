@@ -2,21 +2,28 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AnimatePresence } from "framer-motion";
-import { ListChecks } from "lucide-react";
 import { toast } from "sonner";
 import { ActivityPalette } from "./ActivityPalette";
-import { ActivityCard } from "./ActivityCard";
+import { ActivityChecklist } from "./ActivityChecklist";
+import { ArtistRegister, type ArtistOption, type LineupMember } from "./ArtistRegister";
 import type { ActivityRef, EventActivityItem } from "./activity-types";
 
 export function ActivitiesSection({
   eventId,
+  eventName,
   allActivities,
   initial,
+  lineup,
+  allArtists,
+  submittedKeys,
 }: {
   eventId: string;
+  eventName: string;
   allActivities: ActivityRef[];
   initial: EventActivityItem[];
+  lineup: LineupMember[];
+  allArtists: ArtistOption[];
+  submittedKeys: string[];
 }) {
   const router = useRouter();
   const [acts, setActs] = useState<EventActivityItem[]>(initial);
@@ -151,13 +158,8 @@ export function ActivitiesSection({
     }
   }
 
-  const allMaterials = acts.flatMap((a) =>
-    a.materials.map((m) => ({ ...m, activity: a.activity.name }))
-  );
-  const doneCount = allMaterials.filter((m) => m.checked).length;
-
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div>
         <p className="mb-3 text-sm text-ink-secondary">
           Tap an activity to add it. Materials auto-fill and stay fully editable.
@@ -170,54 +172,24 @@ export function ActivitiesSection({
         />
       </div>
 
-      <AnimatePresence>
-        {acts.length > 0 && (
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-            {acts.map((ea) => (
-              <ActivityCard
-                key={ea.id}
-                ea={ea}
-                onRemove={() => toggleActivity(ea.activityId)}
-                onToggleMaterial={(matId, checked) =>
-                  toggleMaterial(ea.id, matId, checked)
-                }
-                onAddMaterial={(name) => addMaterial(ea.id, name)}
-                onDeleteMaterial={(matId) => deleteMaterial(ea.id, matId)}
-                onNotes={(notes) => saveNotes(ea.id, notes)}
-              />
-            ))}
-          </div>
-        )}
-      </AnimatePresence>
+      <ActivityChecklist
+        activities={acts}
+        onToggleMaterial={toggleMaterial}
+        onAddMaterial={addMaterial}
+        onDeleteMaterial={deleteMaterial}
+        onRemoveActivity={toggleActivity}
+        onNotes={saveNotes}
+      />
 
-      {allMaterials.length > 0 && (
-        <div className="rounded-xl border bg-surface-1 p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ListChecks className="h-4 w-4 text-brand-purple" />
-              <span className="section-label mb-0">Materials summary</span>
-            </div>
-            <span className="text-xs text-ink-muted">
-              {doneCount}/{allMaterials.length} packed
-            </span>
-          </div>
-          <div className="grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2">
-            {allMaterials.map((m) => (
-              <div key={m.id} className="flex items-center gap-2 text-sm">
-                <span
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    m.checked ? "bg-success" : "bg-line-strong"
-                  }`}
-                />
-                <span className={m.checked ? "text-ink-muted line-through" : "text-ink-primary"}>
-                  {m.name}
-                </span>
-                <span className="ml-auto text-xs text-ink-muted">{m.activity}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="border-t pt-5">
+        <ArtistRegister
+          eventId={eventId}
+          eventName={eventName}
+          initial={lineup}
+          allArtists={allArtists}
+          submittedKeys={submittedKeys}
+        />
+      </div>
     </div>
   );
 }

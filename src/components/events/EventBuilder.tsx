@@ -34,6 +34,7 @@ import { ActivitiesSection } from "@/components/builder/ActivitiesSection";
 import { TeamSection } from "@/components/builder/TeamSection";
 import { CallSheetSection } from "@/components/builder/CallSheetSection";
 import { LogisticsSection } from "@/components/builder/LogisticsSection";
+import { RunSheetPanel, type RunSheetData } from "@/components/builder/RunSheetPanel";
 import { MeetingsSection } from "@/components/builder/MeetingsSection";
 import { PartnersSection } from "@/components/builder/PartnersSection";
 import { GuestsSection } from "@/components/builder/GuestsSection";
@@ -52,12 +53,16 @@ export function EventBuilder({
   event,
   allActivities,
   mediaArtists,
+  allArtists,
   allPartners,
   allGuests,
+  runSheet,
 }: {
   event: FullEvent;
+  runSheet: RunSheetData;
   allActivities: ActivityRef[];
   mediaArtists: { id: string; name: string; category: string }[];
+  allArtists: { id: string; name: string; category: string; email: string | null }[];
   allPartners: { id: string; name: string; type: string }[];
   allGuests: { id: string; name: string; email: string | null; role: string | null }[];
 }) {
@@ -70,8 +75,27 @@ export function EventBuilder({
     setActiveEvent({ id: event.id, name: event.name });
   }, [event.id, event.name, setActiveEvent]);
 
-  // Denominator for "x of y artists submitted" — everyone booked as an artist.
-  const bookedArtists = event.teamMembers.filter((m) => m.teamType === "ARTIST").length;
+  // The artist lineup doubles as the denominator for "x of y submitted".
+  const lineup = event.teamMembers
+    .filter((m) => m.teamType === "ARTIST")
+    .map((m) => ({
+      id: m.id,
+      role: m.role,
+      status: m.status,
+      callSheetSentAt: m.callSheetSentAt
+        ? new Date(m.callSheetSentAt).toISOString()
+        : null,
+      artistId: m.artistId,
+      name: m.artist?.name ?? m.teamMember?.name ?? "Unnamed",
+      email: m.artist?.email ?? m.teamMember?.email ?? null,
+      category: m.artist?.category ?? null,
+    }));
+  const bookedArtists = lineup.length;
+  const crew = event.teamMembers.filter((m) => m.teamType !== "ARTIST");
+
+  const rsvpHeadCount = event.guestInvites
+    .filter((i) => i.status === "confirmed")
+    .reduce((sum, i) => sum + (i.partySize ?? 1), 0);
 
   const progress = computeProgress({
     activities: event.activities.length > 0,
@@ -180,17 +204,31 @@ export function EventBuilder({
       </div>
 
       {/* Feature sections */}
-      <CollapsibleSection title="Activities & Materials" icon={Brush} defaultOpen summary={`${event.activities.length} activities`}>
+      <CollapsibleSection
+        title="Activities & Materials"
+        icon={Brush}
+        defaultOpen
+        summary={`${event.activities.length} activities · ${lineup.length} artists booked`}
+      >
         <ActivitiesSection
           eventId={event.id}
+          eventName={event.name}
           allActivities={allActivities}
           initial={event.activities}
+          lineup={lineup}
+          allArtists={allArtists}
+          submittedKeys={event.callSheets.map((c) => c.artistNameKey)}
         />
       </CollapsibleSection>
-      <CollapsibleSection title="Team" icon={Users} summary={`${event.teamMembers.length} people`}>
+      {/* Artists live in the lineup register above, not here. */}
+      <CollapsibleSection
+        title="Team"
+        icon={Users}
+        summary={`${crew.length} ${crew.length === 1 ? "person" : "people"}`}
+      >
         <TeamSection
           eventId={event.id}
-          initial={event.teamMembers}
+          initial={crew}
           mediaArtists={mediaArtists}
         />
       </CollapsibleSection>
@@ -229,7 +267,14 @@ export function EventBuilder({
           }))}
         />
       </CollapsibleSection>
-      <CollapsibleSection title="Logistics" icon={Truck} summary={`${event.logistics.length} tasks`}>
+      <CollapsibleSection
+        title="Logistics & Call Sheet"
+        icon={Truck}
+        summary={`${event.logistics.length} tasks · shareable with venue and vendors`}
+      >
+        <div className="mb-5">
+          <RunSheetPanel eventId={event.id} initial={runSheet} />
+        </div>
         <LogisticsSection
           eventId={event.id}
           eventDateOnly={new Date(event.date).toISOString().slice(0, 10)}
@@ -279,11 +324,21 @@ export function EventBuilder({
           allPartners={allPartners}
         />
       </CollapsibleSection>
-      <CollapsibleSection title="Guests" icon={UserCheck} summary={`${event.guestInvites.length} invites`}>
+      <CollapsibleSection
+        title="Guests & RSVPs"
+        icon={UserCheck}
+        summary={`${event.guestInvites.length} invites · ${rsvpHeadCount} coming`}
+      >
         <GuestsSection
           eventId={event.id}
           event={{ name: event.name, date: formatDate(event.date), location: event.location, theme: event.theme }}
-          initial={event.guestInvites}
+          initial={event.guestInvites.map((i) => ({
+            id: i.id,
+            status: i.status,
+            partySize: i.partySize,
+            respondedAt: i.respondedAt ? new Date(i.respondedAt).toISOString() : null,
+            guest: i.guest,
+          }))}
           allGuests={allGuests}
         />
       </CollapsibleSection>

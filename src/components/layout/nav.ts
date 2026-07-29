@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   CalendarDays,
+  CalendarRange,
   Users,
   UserCheck,
   Handshake,
@@ -17,6 +18,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { label: "Home", href: "/", icon: LayoutDashboard },
   { label: "Events", href: "/events", icon: CalendarDays },
+  { label: "Calendar", href: "/calendar", icon: CalendarRange },
   { label: "Artists", href: "/artists", icon: Users },
   { label: "Guests", href: "/guests", icon: UserCheck },
   { label: "Partners", href: "/partners", icon: Handshake },

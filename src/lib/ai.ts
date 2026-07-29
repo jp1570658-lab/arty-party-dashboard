@@ -118,6 +118,47 @@ export function aiNotConfiguredResponse() {
   );
 }
 
+/**
+ * Maps an AI failure to a response the user can act on. Billing and auth
+ * problems are the common ones in practice and are indistinguishable from a
+ * generic 500 unless the API's own message is surfaced.
+ */
+export function aiErrorResponse(err: unknown) {
+  if (err instanceof AINotConfiguredError) return aiNotConfiguredResponse();
+
+  if (err instanceof Anthropic.APIError) {
+    const detail =
+      (err.error as { error?: { message?: string } } | undefined)?.error?.message ??
+      err.message;
+
+    if (err.status === 400 && /credit balance/i.test(detail)) {
+      return NextResponse.json(
+        {
+          error:
+            "Your Anthropic account is out of credit, so AI features can't run. Top up at console.anthropic.com under Plans & Billing.",
+          code: "AI_NO_CREDIT",
+        },
+        { status: 402 }
+      );
+    }
+    if (err.status === 401) {
+      return NextResponse.json(
+        { error: "The Anthropic API key was rejected. Check ANTHROPIC_API_KEY.", code: "AI_UNAUTHORIZED" },
+        { status: 401 }
+      );
+    }
+    if (err.status === 429) {
+      return NextResponse.json(
+        { error: "Anthropic rate limit hit. Wait a moment and try again.", code: "AI_RATE_LIMITED" },
+        { status: 429 }
+      );
+    }
+    return NextResponse.json({ error: detail, code: "AI_ERROR" }, { status: 502 });
+  }
+
+  return null;
+}
+
 export const AI_SYSTEM_BASE =
   "You are an AI assistant for Arty-Party, a recurring arts and culture event series " +
   "(live painting, poetry, music, DJ sets, exhibitions, pottery, and a media team). " +

@@ -7,7 +7,7 @@ import { MobileNav } from "./MobileNav";
 import { AIAssistant } from "@/components/ai/AIAssistant";
 
 /** Routes shown to people outside the team — no sidebar, header or AI panel. */
-const BARE_ROUTES = ["/call-sheet"];
+const BARE_ROUTES = ["/call-sheet", "/run-sheet", "/rsvp"];
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

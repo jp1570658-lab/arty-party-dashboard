@@ -46,6 +46,44 @@ model Event {
   runOfShow       RunOfShowItem[]
   guestInvites    GuestInvite[]
   callSheets      CallSheetSubmission[]
+  eventCallSheet  EventCallSheet?
+  plannerTasks    PlannerTask[]
+}
+
+// Internal operational call sheet for running the event — distinct from the
+// artist-facing CallSheetSubmission. Header/contact block lives here; the
+// who/what/when grid is the event's LogisticsItem rows. Shared read-only with
+// venue and vendors via `shareToken`.
+model EventCallSheet {
+  id               String    @id @default(cuid())
+  eventId          String    @unique
+  shareToken       String    @unique
+  doorsTime        DateTime?
+  address          String?
+  parkingNotes     String?
+  // [{ name, role, phone }]
+  keyContacts      Json?
+  emergencyContact String?
+  nearestHospital  String?
+  generalNotes     String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+// Dated planning / content-calendar item. Optionally tied to an event.
+model PlannerTask {
+  id        String   @id @default(cuid())
+  eventId   String?
+  date      DateTime
+  title     String
+  kind      String   @default("TASK") // PlannerTaskKind
+  notes     String?
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  event Event? @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
 
 // One entry per artist/DJ who fills in the event's shared call sheet link.
@@ -180,6 +218,8 @@ model EventTeamMember {
   teamType     String // TeamType
   status       String      @default("pending")
   notes        String?
+  // Set when the artist call sheet link was emailed from the dashboard.
+  callSheetSentAt DateTime?
   event        Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
   teamMember   TeamMember? @relation(fields: [teamMemberId], references: [id])
   artist       Artist?     @relation(fields: [artistId], references: [id])
@@ -251,6 +291,10 @@ model GuestInvite {
   status  String    @default("pending")
   sentAt  DateTime?
   notes   String?
+  // Public RSVP link + response. partySize counts the guest plus any plus-ones.
+  rsvpToken   String?   @unique
+  respondedAt DateTime?
+  partySize   Int?
   event   Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
   guest   Guest     @relation(fields: [guestId], references: [id])
 }

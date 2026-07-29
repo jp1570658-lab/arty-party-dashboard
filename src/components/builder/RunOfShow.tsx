@@ -2,10 +2,56 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, X, Check, Printer, FileDown, Trash2, Clock } from "lucide-react";
+import { Plus, X, Check, Printer, FileDown, Trash2, Clock, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button, Input } from "@/components/ui/primitives";
 import { formatTime } from "@/lib/utils";
+
+/** ISO → "HH:MM" for the inline time inputs. */
+function toTimeInput(iso: string): string {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+/** Borderless input that looks like text until you focus it. Commits on blur so
+ *  editing an AI-drafted row is a click-and-type, not a modal. */
+function EditableCell({
+  value,
+  placeholder,
+  className,
+  type = "text",
+  onCommit,
+}: {
+  value: string;
+  placeholder?: string;
+  className?: string;
+  type?: string;
+  onCommit: (value: string) => void;
+}) {
+  return (
+    <>
+      <input
+        type={type}
+        defaultValue={value}
+        key={value}
+        placeholder={placeholder}
+        onBlur={(e) => {
+          const v = e.target.value.trim();
+          if (v !== value) onCommit(v);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur();
+          if (e.key === "Escape") {
+            e.currentTarget.value = value;
+            e.currentTarget.blur();
+          }
+        }}
+        className={`rounded border-transparent bg-transparent px-1 py-0.5 text-sm placeholder:text-ink-muted hover:bg-surface-2 focus:bg-surface-2 focus:outline-none focus:ring-1 focus:ring-purple-500 print:hidden ${className ?? ""}`}
+      />
+      <span className={`hidden print:inline ${className ?? ""}`}>{value || placeholder}</span>
+    </>
+  );
+}
 
 interface RosItem {
   id: string;
@@ -30,6 +76,7 @@ export function RunOfShow({
   const router = useRouter();
   const [items, setItems] = useState<RosItem[]>(initial);
   const [open, setOpen] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [form, setForm] = useState({
     time: "",
     duration: "",
@@ -85,13 +132,65 @@ export function RunOfShow({
     }
   }
 
+  /** Inline row edit — every AI-drafted row stays fully adjustable. */
+  async function patch(id: string, patchBody: Partial<RosItem>) {
+    const prev = items;
+    setItems((p) => p.map((i) => (i.id === id ? { ...i, ...patchBody } : i)));
+    try {
+      const res = await fetch(`/api/events/${eventId}/run-of-show/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patchBody),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setItems(prev);
+      toast.error("Failed to save");
+    }
+  }
+
+  async function generate() {
+    const hasItems = items.length > 0;
+    if (
+      hasItems &&
+      !confirm(
+        "Replace the current run of show with a fresh AI draft? Your existing rows will be removed."
+      )
+    ) {
+      return;
+    }
+    setGenerating(true);
+    try {
+      const res = await fetch(`/api/events/${eventId}/run-of-show/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ replace: true }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to draft");
+      setItems(data.items);
+      toast.success(
+        `Drafted ${data.generated} rows — review and adjust anything that's off`
+      );
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to draft");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
         <p className="text-sm text-ink-secondary">
           The master timeline for event day — hand this to your crew.
         </p>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={generate} loading={generating}>
+            <Sparkles className="h-4 w-4" />
+            {items.length > 0 ? "Redraft with AI" : "Draft with AI"}
+          </Button>
           <Button variant="secondary" onClick={() => window.print()}>
             <Printer className="h-4 w-4" />
             Print
@@ -124,26 +223,70 @@ export function RunOfShow({
             {items.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-3 py-6 text-center text-ink-muted">
-                  No items yet. Add the first cue below.
+                  No items yet. Draft one with AI, or add the first cue below.
                 </td>
               </tr>
             )}
             {items.map((it) => (
               <tr key={it.id} className="border-t align-top">
-                <td className="whitespace-nowrap px-3 py-2 font-semibold tabular-nums">
-                  {formatTime(it.time)}
+                <td className="whitespace-nowrap px-3 py-2">
+                  <input
+                    type="time"
+                    defaultValue={toTimeInput(it.time)}
+                    onBlur={(e) => {
+                      if (!e.target.value) return;
+                      const iso = new Date(
+                        `${eventDateOnly}T${e.target.value}`
+                      ).toISOString();
+                      if (iso !== it.time) patch(it.id, { time: iso });
+                    }}
+                    className="w-[92px] rounded border-transparent bg-transparent px-1 py-0.5 text-sm font-semibold tabular-nums hover:bg-surface-2 focus:bg-surface-2 focus:outline-none focus:ring-1 focus:ring-purple-500 print:hidden"
+                  />
+                  <span className="hidden font-semibold tabular-nums print:inline">
+                    {formatTime(it.time)}
+                  </span>
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-ink-secondary">
-                  {it.duration ? `${it.duration}m` : "—"}
+                <td className="whitespace-nowrap px-3 py-2">
+                  <EditableCell
+                    value={it.duration != null ? String(it.duration) : ""}
+                    placeholder="—"
+                    type="number"
+                    className="w-14"
+                    onCommit={(v) =>
+                      patch(it.id, { duration: v ? Number(v) : null })
+                    }
+                  />
                 </td>
                 <td className="px-3 py-2">
-                  <div className="font-medium text-ink-primary">{it.item}</div>
-                  {it.notes && (
-                    <div className="text-xs text-ink-muted">{it.notes}</div>
-                  )}
+                  <EditableCell
+                    value={it.item}
+                    placeholder="Item / cue"
+                    className="w-full font-medium text-ink-primary"
+                    onCommit={(v) => v && patch(it.id, { item: v })}
+                  />
+                  <EditableCell
+                    value={it.notes ?? ""}
+                    placeholder="Add a note…"
+                    className="w-full text-xs text-ink-muted"
+                    onCommit={(v) => patch(it.id, { notes: v || null })}
+                  />
                 </td>
-                <td className="px-3 py-2 text-ink-secondary">{it.owner ?? "—"}</td>
-                <td className="px-3 py-2 text-ink-secondary">{it.location ?? "—"}</td>
+                <td className="px-3 py-2">
+                  <EditableCell
+                    value={it.owner ?? ""}
+                    placeholder="—"
+                    className="w-24 text-ink-secondary"
+                    onCommit={(v) => patch(it.id, { owner: v || null })}
+                  />
+                </td>
+                <td className="px-3 py-2">
+                  <EditableCell
+                    value={it.location ?? ""}
+                    placeholder="—"
+                    className="w-24 text-ink-secondary"
+                    onCommit={(v) => patch(it.id, { location: v || null })}
+                  />
+                </td>
                 <td className="px-3 py-2 print:hidden">
                   <button
                     onClick={() => remove(it.id)}

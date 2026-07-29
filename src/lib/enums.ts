@@ -124,6 +124,20 @@ export const INVITE_STATUS_LABELS: Record<string, string> = {
 
 export const PARTNER_TYPES = ["sponsor", "venue", "brand", "media partner"] as const;
 
+// Calendar entries: operational planning tasks vs content/marketing beats.
+export const PLANNER_KINDS = ["TASK", "CONTENT"] as const;
+export type PlannerKind = (typeof PLANNER_KINDS)[number];
+
+export const PLANNER_KIND_LABELS: Record<PlannerKind, string> = {
+  TASK: "Planning task",
+  CONTENT: "Content",
+};
+
+export const PLANNER_KIND_STYLES: Record<PlannerKind, string> = {
+  TASK: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+  CONTENT: "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
+};
+
 export const BUDGET_CATEGORIES = [
   "Venue",
   "Sound & Technical",
