@@ -19,6 +19,9 @@ import { zonedDateKey, zonedToUtc } from "./timezone";
  *  finish inside the serverless function limit. */
 export const MAX_SEARCHES = 3;
 
+/** Unsaved insights older than this are pruned on each daily run. */
+export const RETAIN_DAYS = 30;
+
 interface RawInsight {
   kind?: string;
   title?: string;
@@ -195,5 +198,12 @@ export async function runDailyInsights() {
     data: seeds.map((s) => ({ ...s, batchDate })),
   });
 
-  return { created: res.count, batchDate };
+  // One batch a day accumulates fast, and a two-month-old "trend" is noise.
+  // Saved insights are kept regardless — that's what saving is for.
+  const cutoff = new Date(batchDate.getTime() - RETAIN_DAYS * 86_400_000);
+  const pruned = await prisma.insight.deleteMany({
+    where: { batchDate: { lt: cutoff }, saved: false },
+  });
+
+  return { created: res.count, pruned: pruned.count, batchDate };
 }
