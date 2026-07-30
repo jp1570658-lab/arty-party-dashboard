@@ -27,7 +27,9 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Reports", href: "/reports", icon: FileText },
 ];
 
-// Items shown in the compact mobile bottom bar
+// Items shown in the compact mobile bottom bar. Anything omitted here has no
+// mobile entry point at all, so this covers the day-to-day destinations;
+// Guests, Partners and Reports are reached from within the pages that link them.
 export const MOBILE_NAV_ITEMS: NavItem[] = NAV_ITEMS.filter((i) =>
-  ["/", "/events", "/artists", "/partners"].includes(i.href)
+  ["/", "/events", "/calendar", "/artists", "/community"].includes(i.href)
 );

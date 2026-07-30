@@ -21,12 +21,13 @@ export function MobileNav() {
             key={item.href}
             href={item.href}
             className={cn(
-              "flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors",
+              // 5 items have to fit a 375px screen — keep labels from wrapping.
+              "flex min-w-0 flex-1 flex-col items-center gap-0.5 px-1 py-2.5 text-[10px] font-medium transition-colors",
               active ? "text-brand-purple" : "text-ink-muted"
             )}
           >
-            <Icon className="h-5 w-5" />
-            {item.label}
+            <Icon className="h-5 w-5 shrink-0" />
+            <span className="max-w-full truncate">{item.label}</span>
           </Link>
         );
       })}
